@@ -57,7 +57,7 @@ Tables créées automatiquement au démarrage (voir `server/migrations.lua`):
 - `outlaw_documents_printed`
 
 ## Sécurité & Permissions
-- `Config.WriterJob = 'avocat'` contrôle qui peut créer/imprimer.
+- `Config.WriterJob = 'avocat'` contrôle qui peut créer/imprimer (accepte un string ou une liste `{ 'avocat', 'lawyer' }`).
 - `Config.AllowPoliceRead = true` permet la lecture côté police (optionnel).
 - Le contenu est **sanitizé** côté serveur de manière simple (MVP).
 
