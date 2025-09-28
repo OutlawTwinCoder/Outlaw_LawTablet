@@ -1,0 +1,2 @@
+-- Compatibility helper: If you don't wire item exports in ox_inventory items.lua,
+-- we still catch usage via the event (see server/main.lua). Nothing else needed here.

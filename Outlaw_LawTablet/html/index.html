@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Outlaw Law Tablet</title>
+  <link rel="stylesheet" href="app.css"/>
+</head>
+<body>
+  <div id="app" class="frame hidden">
+    <div class="topbar">
+      <div class="title">Avocat — Bloc-note</div>
+      <div class="actions">
+        <input id="verify-input" placeholder="Code document (ex: ABCD-EFGH)"/>
+        <button id="btn-verify">Vérifier</button>
+        <button id="btn-close">Fermer</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button data-tab="complaint" class="tab active">Plainte</button>
+      <button data-tab="trial" class="tab">Procès</button>
+      <button data-tab="note" class="tab">Notes</button>
+    </div>
+    <div class="panel">
+      <div class="left">
+        <div class="card">
+          <div class="card-title with-action">
+            <span id="list-title">Plainte</span>
+            <div class="actions">
+              <select id="filter-type">
+                <option value="complaint">Plainte</option>
+                <option value="trial">Procès</option>
+                <option value="note">Note</option>
+              </select>
+              <button id="btn-refresh">Rafraîchir</button>
+            </div>
+          </div>
+          <div id="list" class="list"></div>
+        </div>
+      </div>
+      <div class="right">
+        <div class="card">
+          <div class="card-title">Nouvelle note</div>
+          <div class="form">
+            <label>Titre</label>
+            <input id="f-title" maxlength="96" placeholder="Titre (optionnel)"/>
+            <label>Type</label>
+            <select id="f-type">
+              <option value="complaint">Plainte</option>
+              <option value="trial">Procès</option>
+              <option value="note" selected>Note</option>
+              <option value="other">Autre</option>
+            </select>
+            <label>Statut</label>
+            <select id="f-status">
+              <option value="Ouverte">Ouverte</option>
+              <option value="En révision">En révision</option>
+              <option value="Brouillon">Brouillon</option>
+            </select>
+            <label>Tags</label>
+            <input id="f-tags" maxlength="128" placeholder="#tag1 #tag2"/>
+            <label>Contenu</label>
+            <textarea id="f-body" rows="8" placeholder="Écrire ici..."></textarea>
+            <div class="form-actions">
+              <button id="btn-create">Créer la note</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Impression</div>
+          <div class="form">
+            <label>ID de la note à imprimer</label>
+            <input id="f-print-id" type="number" min="1" placeholder="ex: 12"/>
+            <div class="form-actions">
+              <button id="btn-print">Imprimer → donner un item</button>
+            </div>
+            <div id="print-result" class="hint"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Document Reader -->
+  <div id="doc" class="doc-layer hidden">
+    <div class="doc-header">
+      <div>Document imprimé</div>
+      <button id="doc-close">Fermer</button>
+    </div>
+    <iframe id="doc-frame"></iframe>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

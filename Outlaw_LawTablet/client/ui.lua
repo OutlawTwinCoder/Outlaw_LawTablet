@@ -1,0 +1,1 @@
+-- Reserved for future keybinds/commands to open tablet without item if desired
