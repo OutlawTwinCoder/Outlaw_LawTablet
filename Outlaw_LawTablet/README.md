@@ -52,12 +52,13 @@ Avocat Tablet + Bloc-note + Impression en item (doc_*).
 - Dans la tablette: champ "Code document" → bouton **Vérifier** pour valider un code public.
 
 ## SQL
-Tables créées automatiquement au démarrage (voir `server/migrations.lua`):
+Tables créées automatiquement au démarrage (voir `server/migrations.lua`). Le script attend l'évènement `MySQL.ready` (oxmysql) ou `onMySQLReady` (mysql-async), donc aucune action manuelle n'est nécessaire sur les installations standards :
 - `outlaw_notes`
 - `outlaw_documents_printed`
+> Si les tables n'apparaissent pas, vérifiez que la ressource `oxmysql` est bien démarrée avant `Outlaw_LawTablet` et relancez la ressource pour rejouer les migrations.
 
 ## Sécurité & Permissions
-- `Config.WriterJob = 'avocat'` contrôle qui peut créer/imprimer.
+- `Config.WriterJob = 'avocat'` contrôle qui peut créer/imprimer (accepte un string ou une liste `{ 'avocat', 'lawyer' }`).
 - `Config.AllowPoliceRead = true` permet la lecture côté police (optionnel).
 - Le contenu est **sanitizé** côté serveur de manière simple (MVP).
 

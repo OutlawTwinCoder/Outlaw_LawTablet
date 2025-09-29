@@ -18,9 +18,13 @@ body { margin:0; font-family: Inter, Arial, sans-serif; background: transparent;
 
 .list { display:flex; flex-direction:column; gap:6px; max-height: 52vh; overflow:auto }
 .row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px; background: rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.05); border-radius:10px }
+.row.clickable { cursor:pointer; transition: background .15s ease, border-color .15s ease; }
+.row.clickable:hover { background: rgba(122,162,255,.12); border-color: rgba(122,162,255,.35); }
 .row .id { opacity:.7; font-size:12px }
 .row .title { font-weight:600 }
 .row .type { font-size:12px; opacity:.8 }
+
+.empty { padding:18px 12px; text-align:center; opacity:.7; font-size:13px; border:1px dashed rgba(255,255,255,.1); border-radius:10px }
 
 .form { display:flex; flex-direction:column; gap:8px }
 .form input, .form select, .form textarea { width:100%; padding:8px 10px; border-radius:10px; background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); color:#eaefff }
