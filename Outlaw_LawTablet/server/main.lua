@@ -14,9 +14,25 @@ exports('useTablet', function(source, item)
 end)
 
 exports('useDocument', function(source, item)
-  local meta = item and (item.metadata or item.info or {})
-  TriggerClientEvent('outlaw_lawtablet:client:openDocument', source, meta or {})
-  return true
+  local meta
+  if type(item) == 'table' then
+    if type(item.metadata) == 'table' then
+      meta = item.metadata
+    elseif type(item.info) == 'table' then
+      meta = item.info
+    end
+  end
+
+  if not Perms.canReadDocument(source, meta or {}) then
+    TriggerClientEvent('ox_lib:notify', source, {
+      type = 'error',
+      title = 'Accès refusé',
+      description = 'Vous ne pouvez pas lire ce document.'
+    })
+    return false
+  end
+
+  return Documents.openDocumentForPlayer(source, meta or {})
 end)
 
 -- Fallback for servers not wiring item exports:
@@ -26,7 +42,22 @@ AddEventHandler('ox_inventory:usedItem', function(source, itemName, data)
     return
   end
   if itemName == Config.Items.DocPlainte or itemName == Config.Items.DocPlaidoyer or itemName == Config.Items.DocNote then
-    local meta = data and (data.metadata or data.info)
-    TriggerClientEvent('outlaw_lawtablet:client:openDocument', source, meta or {})
+    local meta
+    if type(data) == 'table' then
+      if type(data.metadata) == 'table' then
+        meta = data.metadata
+      elseif type(data.info) == 'table' then
+        meta = data.info
+      end
+    end
+    if not Perms.canReadDocument(source, meta or {}) then
+      TriggerClientEvent('ox_lib:notify', source, {
+        type = 'error',
+        title = 'Accès refusé',
+        description = 'Vous ne pouvez pas lire ce document.'
+      })
+      return
+    end
+    Documents.openDocumentForPlayer(source, meta or {})
   end
 end)
