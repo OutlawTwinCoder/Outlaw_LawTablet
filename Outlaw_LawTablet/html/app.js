@@ -44,10 +44,10 @@ function rowEl(item) {
   div.className = 'row';
   div.innerHTML = `
     <div>
-      <div class="title">\${item.title}</div>
-      <div class="type">\${item.type} • \${item.status}</div>
+      <div class="title">${item.title}</div>
+      <div class="type">${item.type} • ${item.status}</div>
     </div>
-    <div class="id">#\${item.id}</div>`;
+    <div class="id">#${item.id}</div>`;
   return div;
 }
 
