@@ -12,6 +12,21 @@ local function normalizeJobName(value)
   return string.lower(str)
 end
 
+local function normalizeIdentifier(value)
+  if value == nil then return nil end
+  local vt = type(value)
+  if vt ~= 'string' and vt ~= 'number' then return nil end
+  local str = tostring(value)
+  if str == '' then return nil end
+  return string.lower(str)
+end
+
+local function identifierMatches(a, b)
+  local na = normalizeIdentifier(a)
+  local nb = normalizeIdentifier(b)
+  return na ~= nil and na == nb
+end
+
 local function extractJobName(job)
   local jt = type(job)
   if jt == 'string' or jt == 'number' then
@@ -88,13 +103,45 @@ function Perms.canWrite(source)
 end
 
 function Perms.canReadDocument(source, doc)
+  doc = doc or {}
   if doc.revoked == 1 then return false end
-  -- If police read is allowed, allow police job
-  if Config.AllowPoliceRead and ESX then
-    local xPlayer = ESX.GetPlayerFromId(source)
-    local job = xPlayer and xPlayer.getJob() or {}
-    if job and job.name == 'police' then return true end
+  if not ESX then return true end
+
+  local xPlayer = ESX.GetPlayerFromId(source)
+  if not xPlayer then return true end
+
+  local jobName = resolveJobName(xPlayer)
+  if jobMatches(jobName) then return true end
+
+  if Config.AllowPoliceRead then
+    if normalizeJobName(jobName) == 'police' then
+      return true
+    end
   end
+
+  if doc then
+    local identifier = Utils and Utils.getIdentifier and Utils.getIdentifier(source)
+    if identifier then
+      if doc.author_identifier and identifierMatches(doc.author_identifier, identifier) then
+        return true
+      end
+
+      local printedBy = doc.printed_by
+      if type(printedBy) == 'table' then
+        printedBy = printedBy.identifier or printedBy.license or printedBy.id or printedBy.source
+      end
+
+      if printedBy and identifierMatches(printedBy, identifier) then
+        return true
+      end
+
+      local owner = doc.owner_identifier or doc.owner
+      if owner and identifierMatches(owner, identifier) then
+        return true
+      end
+    end
+  end
+
   -- By default documents are readable by anyone who physically has the item
   return true
 end

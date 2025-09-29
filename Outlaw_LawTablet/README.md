@@ -59,6 +59,7 @@ Tables créées automatiquement au démarrage (voir `server/migrations.lua`). Le
 
 ## Sécurité & Permissions
 - `Config.WriterJob = 'avocat'` contrôle qui peut créer/imprimer (accepte un string ou une liste `{ 'avocat', 'lawyer' }`).
+- Les membres du métier défini dans `Config.WriterJob` ainsi que l'auteur du document peuvent toujours lire leurs impressions.
 - `Config.AllowPoliceRead = true` permet la lecture côté police (optionnel).
 - Le contenu est **sanitizé** côté serveur de manière simple (MVP).
 

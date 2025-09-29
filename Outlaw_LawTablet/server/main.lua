@@ -22,6 +22,16 @@ exports('useDocument', function(source, item)
       meta = item.info
     end
   end
+
+  if not Perms.canReadDocument(source, meta or {}) then
+    TriggerClientEvent('ox_lib:notify', source, {
+      type = 'error',
+      title = 'Accès refusé',
+      description = 'Vous ne pouvez pas lire ce document.'
+    })
+    return false
+  end
+
   TriggerClientEvent('outlaw_lawtablet:client:openDocument', source, meta or {})
   return true
 end)
@@ -40,6 +50,14 @@ AddEventHandler('ox_inventory:usedItem', function(source, itemName, data)
       elseif type(data.info) == 'table' then
         meta = data.info
       end
+    end
+    if not Perms.canReadDocument(source, meta or {}) then
+      TriggerClientEvent('ox_lib:notify', source, {
+        type = 'error',
+        title = 'Accès refusé',
+        description = 'Vous ne pouvez pas lire ce document.'
+      })
+      return
     end
     TriggerClientEvent('outlaw_lawtablet:client:openDocument', source, meta or {})
   end
