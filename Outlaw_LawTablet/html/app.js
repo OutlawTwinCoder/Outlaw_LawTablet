@@ -217,9 +217,13 @@ function closeDocument(showApp = true) {
   appWasVisibleBeforeDoc = false;
 }
 
-document.getElementById('doc-close').addEventListener('click', () => {
+function handleDocClose() {
+  const shouldShowApp = appWasVisibleBeforeDoc;
   closeDocument(true);
-});
+  postNui('close_document', { showApp: shouldShowApp });
+}
+
+document.getElementById('doc-close').addEventListener('click', handleDocClose);
 
 btnClose.addEventListener('click', () => {
   postNui('close', {}).finally(() => {
@@ -234,3 +238,15 @@ btnVerify.addEventListener('click', verifyCode);
 
 tabs.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 filterType.addEventListener('change', refreshList);
+
+window.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape') {
+    if (!docLayer.classList.contains('hidden')) {
+      ev.preventDefault();
+      handleDocClose();
+    } else if (!app.classList.contains('hidden')) {
+      ev.preventDefault();
+      btnClose.click();
+    }
+  }
+});

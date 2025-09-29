@@ -47,6 +47,18 @@ RegisterNUICallback('verify_code', function(data, cb)
   cb(res or { ok=false })
 end)
 
+RegisterNUICallback('close_document', function(data, cb)
+  local showApp = data and data.showApp
+  if showApp then
+    SetNuiFocus(true, true)
+    uiOpen = true
+  else
+    SetNuiFocus(false, false)
+    uiOpen = false
+  end
+  cb(true)
+end)
+
 RegisterNetEvent('outlaw_lawtablet:client:openDocument', function(meta)
   SetNuiFocus(true, true)
   SendNUIMessage({ action = 'openDocument', meta = meta })
