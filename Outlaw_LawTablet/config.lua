@@ -1,7 +1,7 @@
 Config = Config or {}
 
--- Which job can create/edit (others can read if they have access to item and permissions)?
-Config.WriterJob = 'avocat'   -- change to your job name
+-- Which job(s) can create/edit (others can read if they have the item)? Can be a string or an array.
+Config.WriterJob = 'avocat'   -- change to your job name or { 'avocat', 'lawyer' }
 Config.AllowPoliceRead = true -- police can read documents if true
 
 -- Item names (must be defined in ox_inventory items data file)
