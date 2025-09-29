@@ -50,14 +50,17 @@ Avocat Tablet + Bloc-note + Impression en item (doc_*).
 - Créer une note (Plainte/Procès/Note), puis **Imprimer** avec l'ID → reçoit un item `doc_*` avec un snapshot HTML.
 - **Utiliser** l'item `doc_*` → ouvre le lecteur (read-only) du document imprimé.
 - Dans la tablette: champ "Code document" → bouton **Vérifier** pour valider un code public.
+- Chaque item imprimé conserve sa metadata complète (`metadata.document`, `note_snapshot`, etc.) pour garder le contenu même si la note d'origine change ou est supprimée.
 
 ## SQL
-Tables créées automatiquement au démarrage (voir `server/migrations.lua`):
+Tables créées automatiquement au démarrage (voir `server/migrations.lua`). Le script attend l'évènement `MySQL.ready` (oxmysql) ou `onMySQLReady` (mysql-async), donc aucune action manuelle n'est nécessaire sur les installations standards :
 - `outlaw_notes`
 - `outlaw_documents_printed`
+> Si les tables n'apparaissent pas, vérifiez que la ressource `oxmysql` est bien démarrée avant `Outlaw_LawTablet` et relancez la ressource pour rejouer les migrations.
 
 ## Sécurité & Permissions
-- `Config.WriterJob = 'avocat'` contrôle qui peut créer/imprimer.
+- `Config.WriterJob = 'avocat'` contrôle qui peut créer/imprimer (accepte un string ou une liste `{ 'avocat', 'lawyer' }`).
+- Les membres du métier défini dans `Config.WriterJob` ainsi que l'auteur du document peuvent toujours lire leurs impressions.
 - `Config.AllowPoliceRead = true` permet la lecture côté police (optionnel).
 - Le contenu est **sanitizé** côté serveur de manière simple (MVP).
 
