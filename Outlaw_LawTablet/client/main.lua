@@ -7,7 +7,32 @@ end, false)
 RegisterNetEvent('outlaw_lawtablet:client:open', function()
   if uiOpen then return end
   SetNuiFocus(true, true)
-  SendNUIMessage({ action = 'open' })
+  local typePayload = {}
+  for key, data in pairs(Config.Types or {}) do
+    typePayload[key] = {
+      label = data.label,
+      color = data.color,
+      item = data.item
+    }
+  end
+
+  local statusPayload = {}
+  for key, list in pairs(Config.StatusByType or {}) do
+    if type(list) == 'table' then
+      statusPayload[key] = {}
+      for i=1, #list do
+        statusPayload[key][i] = list[i]
+      end
+    end
+  end
+
+  SendNUIMessage({
+    action = 'open',
+    config = {
+      types = typePayload,
+      statuses = statusPayload
+    }
+  })
   uiOpen = true
 end)
 

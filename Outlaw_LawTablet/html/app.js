@@ -11,11 +11,18 @@ const listTitle = document.getElementById('list-title');
 const filterType = document.getElementById('filter-type');
 const listEl = document.getElementById('list');
 
-const TYPE_LABELS = {
+let TYPE_LABELS = {
   complaint: 'Plainte',
   trial: 'Procès',
   note: 'Note',
   other: 'Autre'
+};
+
+let STATUS_OPTIONS = {
+  complaint: ['Ouverte', 'En révision', 'Classée'],
+  trial: ['Préparation', 'Audience', 'Délibéré', 'Clos'],
+  note: ['Brouillon', 'Finale'],
+  other: ['Brouillon', 'Finale']
 };
 
 const btnClose = document.getElementById('btn-close');
@@ -48,11 +55,100 @@ function cleanText(value) {
   return text;
 }
 
+function normalizedTypeKey(value) {
+  return cleanText(value).toLowerCase();
+}
+
+function labelForType(rawType) {
+  const key = normalizedTypeKey(rawType);
+  if (!key) return 'Note';
+  return TYPE_LABELS[key] || (key.charAt(0).toUpperCase() + key.slice(1));
+}
+
+function applyTypeConfig(config) {
+  if (!config || typeof config !== 'object') return;
+  Object.entries(config).forEach(([key, data]) => {
+    const normalized = normalizedTypeKey(key);
+    if (!normalized) return;
+    if (data && typeof data === 'object') {
+      const label = cleanText(data.label);
+      if (label) {
+        TYPE_LABELS[normalized] = label;
+      }
+    }
+  });
+  updateTypeOptionLabels();
+}
+
+function applyStatusConfig(config) {
+  if (!config || typeof config !== 'object') return;
+  Object.entries(config).forEach(([key, list]) => {
+    const normalized = normalizedTypeKey(key);
+    if (!normalized || !Array.isArray(list)) return;
+    const cleaned = list.map(cleanText).filter((entry) => entry !== '');
+    if (cleaned.length > 0) {
+      STATUS_OPTIONS[normalized] = cleaned;
+    }
+  });
+}
+
+function getStatusesForType(type) {
+  const normalized = normalizedTypeKey(type);
+  if (normalized && Array.isArray(STATUS_OPTIONS[normalized]) && STATUS_OPTIONS[normalized].length > 0) {
+    return STATUS_OPTIONS[normalized];
+  }
+  if (Array.isArray(STATUS_OPTIONS.note) && STATUS_OPTIONS.note.length > 0) {
+    return STATUS_OPTIONS.note;
+  }
+  if (Array.isArray(STATUS_OPTIONS.other) && STATUS_OPTIONS.other.length > 0) {
+    return STATUS_OPTIONS.other;
+  }
+  return ['Brouillon'];
+}
+
+function setStatusOptionsForType(type, preserveSelection) {
+  const statuses = getStatusesForType(type);
+  const previousValue = preserveSelection ? fStatus.value : null;
+  fStatus.innerHTML = '';
+  statuses.forEach((status) => {
+    const option = document.createElement('option');
+    option.value = status;
+    option.textContent = status;
+    fStatus.appendChild(option);
+  });
+  if (previousValue && statuses.includes(previousValue)) {
+    fStatus.value = previousValue;
+  } else if (statuses.length > 0) {
+    fStatus.value = statuses[0];
+  } else {
+    fStatus.value = '';
+  }
+}
+
+function updateTypeOptionLabels() {
+  tabs.forEach((btn) => {
+    const typeKey = normalizedTypeKey(btn.dataset.tab);
+    const label = labelForType(typeKey);
+    if (label) {
+      btn.textContent = label;
+    }
+  });
+  [filterType, fType].forEach((select) => {
+    Array.from(select.options).forEach((opt) => {
+      const label = labelForType(opt.value);
+      if (label) {
+        opt.textContent = label;
+      }
+    });
+  });
+  listTitle.textContent = labelForType(filterType.value || 'note');
+}
+
 function docSubtitle(meta) {
   if (!meta || typeof meta !== 'object') return '';
   const parts = [];
   const typeKey = meta.type || (meta.source && meta.source.type) || '';
-  const type = cleanText(meta.type_label || (typeKey && TYPE_LABELS[typeKey]) || typeKey);
+  const type = cleanText(meta.type_label || labelForType(typeKey));
   if (type) parts.push(type);
   const noteId = cleanText(
     (meta.note_id != null ? `#${meta.note_id}` : '') ||
@@ -81,12 +177,20 @@ function postNui(action, data) {
 }
 
 function switchTab(t) {
-  tabs.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === t));
-  listTitle.textContent = t === 'complaint' ? 'Plainte' : t === 'trial' ? 'Procès' : 'Notes';
-  filterType.value = t;
-  if ([...fType.options].some(opt => opt.value === t)) {
-    fType.value = t;
+  const normalized = normalizedTypeKey(t);
+  tabs.forEach(btn => btn.classList.toggle('active', normalizedTypeKey(btn.dataset.tab) === normalized));
+  listTitle.textContent = labelForType(normalized);
+  if ([...filterType.options].some(opt => normalizedTypeKey(opt.value) === normalized)) {
+    filterType.value = normalized;
   }
+  let statusType = normalized;
+  if ([...fType.options].some(opt => normalizedTypeKey(opt.value) === normalized)) {
+    fType.value = normalized;
+  } else if (fType.options.length > 0) {
+    fType.value = fType.options[0].value;
+    statusType = fType.value;
+  }
+  setStatusOptionsForType(statusType, false);
   refreshList();
 }
 
@@ -94,7 +198,7 @@ function rowEl(item) {
   const div = document.createElement('div');
   div.className = 'row clickable';
   const rawTitle = typeof item.title === 'string' && item.title.trim() !== '' ? item.title : 'Sans titre';
-  const rawType = TYPE_LABELS[item.type] || item.type || 'Note';
+  const rawType = labelForType(item.type);
   const rawStatus = item.status || '';
   const idText = item.id != null ? String(item.id) : '?';
   div.innerHTML = `
@@ -138,8 +242,10 @@ async function createNote() {
   };
   const r = await postNui('create_note', payload);
   if (r.ok) {
-    fTitle.value = ''; fBody.value = ''; fTags.value = '';
-    fStatus.value = 'Brouillon';
+    fTitle.value = '';
+    fBody.value = '';
+    fTags.value = '';
+    setStatusOptionsForType(fType.value, false);
     await refreshList();
   } else {
     alert('Erreur: création impossible (droits?)');
@@ -173,7 +279,7 @@ async function openNote(id) {
     return;
   }
   const note = r.item;
-  const typeLabel = TYPE_LABELS[note.type] || note.type || 'Note';
+  const typeLabel = labelForType(note.type);
   const title = escapeHtml(note.title && note.title.trim() !== '' ? note.title : 'Sans titre');
   const status = escapeHtml(note.status || '');
   const tags = escapeHtml(note.tags || '');
@@ -222,6 +328,15 @@ async function openNote(id) {
 window.addEventListener('message', (e) => {
   const d = e.data || {};
   if (d.action === 'open') {
+    if (d.config) {
+      if (d.config.types) {
+        applyTypeConfig(d.config.types);
+      }
+      if (d.config.statuses) {
+        applyStatusConfig(d.config.statuses);
+        setStatusOptionsForType(fType.value || filterType.value || 'note', true);
+      }
+    }
     closeDocument(false);
     app.classList.remove('hidden');
     switchTab('complaint');
@@ -293,8 +408,15 @@ btnCreate.addEventListener('click', createNote);
 btnPrint.addEventListener('click', printDoc);
 btnVerify.addEventListener('click', verifyCode);
 
+setStatusOptionsForType(fType.value, false);
+updateTypeOptionLabels();
+
 tabs.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
-filterType.addEventListener('change', refreshList);
+filterType.addEventListener('change', () => {
+  listTitle.textContent = labelForType(filterType.value);
+  refreshList();
+});
+fType.addEventListener('change', () => setStatusOptionsForType(fType.value, false));
 
 window.addEventListener('keydown', (ev) => {
   if (ev.key === 'Escape') {
