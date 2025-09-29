@@ -1,6 +1,8 @@
 const app = document.getElementById('app');
 const docLayer = document.getElementById('doc');
 const docFrame = document.getElementById('doc-frame');
+const docTitleEl = document.getElementById('doc-title');
+const docSubtitleEl = document.getElementById('doc-subtitle');
 let lastDocUrl = null;
 let appWasVisibleBeforeDoc = false;
 
@@ -38,6 +40,28 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function cleanText(value) {
+  if (value == null) return '';
+  const text = String(value).trim();
+  return text;
+}
+
+function docSubtitle(meta) {
+  if (!meta || typeof meta !== 'object') return '';
+  const parts = [];
+  const type = cleanText(meta.type_label || (meta.type && TYPE_LABELS[meta.type]) || meta.type);
+  if (type) parts.push(type);
+  const status = cleanText(meta.status);
+  if (status) parts.push(status);
+  const printedAt = cleanText(meta.printed_at || meta.created_at || meta.updated_at);
+  if (printedAt) parts.push(printedAt);
+  const author = cleanText(meta.author || meta.author_charname || (meta.printed_by && (meta.printed_by.charname || meta.printed_by.name)));
+  if (author) parts.push(author);
+  const tags = cleanText(meta.tags);
+  if (tags) parts.push(tags);
+  return parts.join(' • ');
 }
 
 function postNui(action, data) {
@@ -171,7 +195,21 @@ async function openNote(id) {
       <div class="body">${body.trim() !== '' ? body : '<em>Sans contenu</em>'}</div>
       ${tags ? `<div class="tags">Tags: ${tags}</div>` : ''}
     </div>`;
-  openDocument({ body_html: html });
+  let modalTitle = cleanText(note.title);
+  if (!modalTitle) {
+    modalTitle = note.id != null ? `${typeLabel} #${note.id}` : typeLabel;
+  }
+
+  openDocument({
+    body_html: html,
+    title: modalTitle,
+    type: note.type,
+    type_label: typeLabel,
+    status: note.status,
+    created_at: note.created_at,
+    author: note.author_charname,
+    tags: note.tags
+  });
 }
 
 // NUI open/close
@@ -190,6 +228,16 @@ function openDocument(meta) {
   appWasVisibleBeforeDoc = !app.classList.contains('hidden');
   app.classList.add('hidden');
   docLayer.classList.remove('hidden');
+  const titleText = cleanText(meta && meta.title) || 'Document';
+  docTitleEl.textContent = titleText;
+  const subtitleText = docSubtitle(meta);
+  if (subtitleText) {
+    docSubtitleEl.textContent = subtitleText;
+    docSubtitleEl.classList.remove('hidden');
+  } else {
+    docSubtitleEl.textContent = '';
+    docSubtitleEl.classList.add('hidden');
+  }
   // Build sandboxed HTML for viewing the stored snapshot
   const html = meta && meta.body_html ? meta.body_html : '<p>Document vide</p>';
   const blob = new Blob([html], { type: 'text/html' });
@@ -207,6 +255,9 @@ function closeDocument(showApp = true) {
   }
   docFrame.src = 'about:blank';
   docLayer.classList.add('hidden');
+  docTitleEl.textContent = 'Document';
+  docSubtitleEl.textContent = '';
+  docSubtitleEl.classList.add('hidden');
   if (showApp) {
     if (appWasVisibleBeforeDoc) {
       app.classList.remove('hidden');

@@ -83,11 +83,16 @@
 
   <!-- Document Reader -->
   <div id="doc" class="doc-layer hidden">
-    <div class="doc-header">
-      <div>Document imprimé</div>
-      <button id="doc-close">Fermer</button>
+    <div class="doc-modal">
+      <div class="doc-header">
+        <div class="doc-titles">
+          <div id="doc-title" class="doc-title">Document</div>
+          <div id="doc-subtitle" class="doc-subtitle hidden"></div>
+        </div>
+        <button id="doc-close">Fermer</button>
+      </div>
+      <iframe id="doc-frame" title="Document"></iframe>
     </div>
-    <iframe id="doc-frame"></iframe>
   </div>
 
   <script src="app.js"></script>
