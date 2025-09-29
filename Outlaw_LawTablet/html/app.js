@@ -51,8 +51,14 @@ function cleanText(value) {
 function docSubtitle(meta) {
   if (!meta || typeof meta !== 'object') return '';
   const parts = [];
-  const type = cleanText(meta.type_label || (meta.type && TYPE_LABELS[meta.type]) || meta.type);
+  const typeKey = meta.type || (meta.source && meta.source.type) || '';
+  const type = cleanText(meta.type_label || (typeKey && TYPE_LABELS[typeKey]) || typeKey);
   if (type) parts.push(type);
+  const noteId = cleanText(
+    (meta.note_id != null ? `#${meta.note_id}` : '') ||
+    (meta.source && meta.source.note_id != null ? `#${meta.source.note_id}` : '')
+  );
+  if (noteId) parts.push(noteId);
   const status = cleanText(meta.status);
   if (status) parts.push(status);
   const printedAt = cleanText(meta.printed_at || meta.created_at || meta.updated_at);

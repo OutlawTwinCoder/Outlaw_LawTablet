@@ -67,6 +67,9 @@ lib.callback.register('outlaw_lawtablet:documents:print', function(source, param
   if exports.ox_inventory then
     exports.ox_inventory:AddItem(source, itemName, 1, {
       doc_id = docId,
+      note_id = note.id,
+      type = note.type,
+      type_label = typeCfg.label,
       source = { type = note.type, note_id = note.id, case_id = note.case_id, version_id = note.version_id or 1 },
       title = (typeCfg.label .. ' – ' .. (note.title or ('Note #'..tostring(note.id)))),
       body_html = html,
