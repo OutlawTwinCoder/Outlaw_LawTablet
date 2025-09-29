@@ -1,3 +1,14 @@
+Documents = Documents or {}
+
+local function deepCopy(value)
+  if type(value) ~= 'table' then return value end
+  local result = {}
+  for k, v in pairs(value) do
+    result[k] = deepCopy(v)
+  end
+  return result
+end
+
 local function randomCode(n)
   local s = ''
   for i=1,n do
@@ -41,6 +52,137 @@ local function buildHtml(note)
   ]]
   local html = string.format('%s<div class="doc">%s%s%s%s<div class="footer"><span class="badge">Outlaw Document</span></div></div>', style, header, h1, author, content, seal)
   return html
+end
+
+local function ensureSource(meta)
+  if type(meta.source) ~= 'table' then
+    meta.source = {}
+  end
+  return meta.source
+end
+
+local function applyPrintedRow(meta, row)
+  if not row then return end
+
+  meta.doc_id = row.id or meta.doc_id
+  meta.note_id = meta.note_id or row.note_id
+  meta.type = meta.type or row.type
+  if not meta.type_label and meta.type then
+    local typeCfg = Config.Types[meta.type]
+    if typeCfg and typeCfg.label then
+      meta.type_label = typeCfg.label
+    end
+  end
+  meta.title = (meta.title and meta.title ~= '') and meta.title or row.title
+  meta.status = meta.status or row.status
+  meta.tags = meta.tags or row.tags
+  meta.printed_at = meta.printed_at or Utils.toIso8601(row.printed_at)
+  meta.body_html = meta.body_html or row.body_html
+  meta.author = meta.author or row.printed_by_charname
+  meta.author_identifier = meta.author_identifier or row.printed_by_identifier
+
+  if type(meta.printed_by) ~= 'table' then
+    meta.printed_by = {
+      charname = row.printed_by_charname,
+      identifier = row.printed_by_identifier
+    }
+  else
+    meta.printed_by.charname = meta.printed_by.charname or row.printed_by_charname
+    meta.printed_by.identifier = meta.printed_by.identifier or row.printed_by_identifier
+  end
+
+  local src = ensureSource(meta)
+  src.doc_id = src.doc_id or row.id
+  src.note_id = src.note_id or row.note_id
+  src.type = src.type or row.type
+  src.case_id = src.case_id or row.case_id
+  src.version_id = src.version_id or row.version_id
+end
+
+local function applyNoteRow(meta, note)
+  if not note then return end
+
+  meta.note_id = meta.note_id or note.id
+  meta.type = meta.type or note.type
+  if not meta.type_label and meta.type then
+    local typeCfg = Config.Types[meta.type]
+    if typeCfg and typeCfg.label then
+      meta.type_label = typeCfg.label
+    end
+  end
+  meta.title = (meta.title and meta.title ~= '') and meta.title or note.title
+  meta.status = meta.status or note.status
+  meta.tags = meta.tags or note.tags
+  meta.created_at = meta.created_at or Utils.toIso8601(note.created_at)
+  meta.author = meta.author or note.author_charname
+  meta.author_identifier = meta.author_identifier or note.author_identifier
+
+  if not meta.body_html or meta.body_html == '' then
+    meta.body_html = buildHtml(note)
+  end
+
+  local src = ensureSource(meta)
+  src.note_id = src.note_id or note.id
+  src.type = src.type or note.type
+  src.case_id = src.case_id or note.case_id
+end
+
+function Documents.prepareViewerMeta(meta)
+  local prepared = deepCopy(type(meta) == 'table' and meta or {})
+
+  local docId = prepared.doc_id or (prepared.source and prepared.source.doc_id)
+  if docId ~= nil then
+    docId = tonumber(docId)
+  end
+
+  local noteId = prepared.note_id or (prepared.source and prepared.source.note_id)
+  if noteId ~= nil then
+    noteId = tonumber(noteId)
+  end
+
+  local printedRow
+  if docId then
+    printedRow = MySQL.single.await('SELECT id,note_id,type,title,body_html,status,tags,case_id,version_id,printed_by_identifier,printed_by_charname,printed_at FROM outlaw_documents_printed WHERE id = ?', { docId })
+    if printedRow then
+      applyPrintedRow(prepared, printedRow)
+      noteId = noteId or printedRow.note_id
+    end
+  end
+
+  if noteId then
+    local noteRow = MySQL.single.await('SELECT id,type,title,body,status,tags,author_charname,author_identifier,created_at,case_id FROM outlaw_notes WHERE id = ? AND deleted_at IS NULL', { noteId })
+    if noteRow then
+      applyNoteRow(prepared, noteRow)
+    end
+  end
+
+  if not prepared.body_html or prepared.body_html == '' then
+    return nil, 'body_missing'
+  end
+
+  if prepared.type and not prepared.type_label then
+    local typeCfg = Config.Types[prepared.type]
+    if typeCfg and typeCfg.label then
+      prepared.type_label = typeCfg.label
+    end
+  end
+
+  return prepared
+end
+
+function Documents.openDocumentForPlayer(source, meta)
+  local prepared, err = Documents.prepareViewerMeta(meta)
+  if not prepared then
+    TriggerClientEvent('ox_lib:notify', source, {
+      type = 'error',
+      title = 'Document',
+      description = err == 'body_missing' and 'Document introuvable ou vide.' or 'Impossible de charger ce document.'
+    })
+    return false
+  end
+
+  TriggerClientEvent('outlaw_lawtablet:client:openDocument', source, prepared)
+  return true
 end
 
 lib.callback.register('outlaw_lawtablet:documents:print', function(source, params)

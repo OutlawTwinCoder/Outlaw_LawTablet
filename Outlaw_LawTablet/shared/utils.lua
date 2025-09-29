@@ -15,6 +15,34 @@ function Utils.nowUtcIso()
   return os.date('!%Y-%m-%dT%H:%M:%SZ')
 end
 
+function Utils.toIso8601(value)
+  if value == nil then return nil end
+
+  if type(value) == 'number' then
+    return os.date('!%Y-%m-%dT%H:%M:%SZ', value)
+  end
+
+  if type(value) == 'string' then
+    local y, m, d, h, min, s = value:match('^(%d+)%-(%d+)%-(%d+) (%d+):(%d+):(%d+)$')
+    if y then
+      local stamp = os.time({
+        year = tonumber(y),
+        month = tonumber(m),
+        day = tonumber(d),
+        hour = tonumber(h),
+        min = tonumber(min),
+        sec = tonumber(s),
+        isdst = false
+      })
+      if stamp then
+        return os.date('!%Y-%m-%dT%H:%M:%SZ', stamp)
+      end
+    end
+  end
+
+  return value
+end
+
 -- Simple JSON helpers
 function Utils.jsonEncode(tbl)
   return json.encode(tbl or {})

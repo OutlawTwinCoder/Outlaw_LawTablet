@@ -32,8 +32,7 @@ exports('useDocument', function(source, item)
     return false
   end
 
-  TriggerClientEvent('outlaw_lawtablet:client:openDocument', source, meta or {})
-  return true
+  return Documents.openDocumentForPlayer(source, meta or {})
 end)
 
 -- Fallback for servers not wiring item exports:
@@ -59,6 +58,6 @@ AddEventHandler('ox_inventory:usedItem', function(source, itemName, data)
       })
       return
     end
-    TriggerClientEvent('outlaw_lawtablet:client:openDocument', source, meta or {})
+    Documents.openDocumentForPlayer(source, meta or {})
   end
 end)
